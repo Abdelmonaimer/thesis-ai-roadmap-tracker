@@ -1,0 +1,874 @@
+﻿<!doctype html><html lang="en"><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><title>Thesis AI Roadmap - Progress Tracker</title><meta name="description" content="A private, saveable progress tracker for your greenhouse AI thesis roadmap."></head><body>
+<div class="login-screen" id="login-screen" hidden>
+  <section class="login-card" aria-labelledby="login-title">
+    <span class="mono login-eyebrow">PRIVATE THESIS WORKSPACE</span>
+    <h1 id="login-title">Pick up your <span>roadmap</span></h1>
+    <p>Sign in to load your saved statuses and personal notes from the cloud.</p>
+    <form id="login-form">
+      <label for="password">Workspace password</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required maxlength="512" placeholder="Enter your password">
+      <button class="primary-button" id="login-submit" type="submit">Open my roadmap</button>
+    </form>
+    <p class="login-message" id="login-message" role="status" aria-live="polite"></p>
+    <small>Your progress and work notes require this password.</small>
+  </section>
+</div>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: a top-to-bottom UML activity diagram on greenhouse graph paper. A central spine runs
+   start → decision → stages; each stage forks into four swimlanes (Learn · Read · Certify · Prove),
+   joins, then passes a gate diamond. Overview matrix and reference cards follow. */
+:root{
+  --paper:#edf2ec; --grid:rgba(24,70,50,.075); --card:#fbfdfa; --card-2:#f3f7f2;
+  --ink:#10241d; --ink-2:#4b6157; --ink-3:#7c8f86; --line:#c7d5cb;
+  --learn:#2c7a4c; --learn-bg:#e2f0e6;
+  --read:#3550a0; --read-bg:#e4e9f7;
+  --cert:#a86d12; --cert-bg:#f7ecd8;
+  --prove:#8b3c73; --prove-bg:#f3e3ee;
+  --warn:#a5461f; --warn-bg:#f8e6dc;
+  --f-display:"Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --paper:#0c1613; --grid:rgba(140,220,185,.055); --card:#13201b; --card-2:#172720;
+  --ink:#e3eee8; --ink-2:#a2b8ae; --ink-3:#6f857b; --line:#263a32;
+  --learn:#6fc792; --learn-bg:#173326; --read:#93a9f2; --read-bg:#1b2442;
+  --cert:#e7b65c; --cert-bg:#382a12; --prove:#df93c8; --prove-bg:#3a1d31;
+  --warn:#f0946a; --warn-bg:#3b1f14; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --paper:#0c1613; --grid:rgba(140,220,185,.055); --card:#13201b; --card-2:#172720;
+  --ink:#e3eee8; --ink-2:#a2b8ae; --ink-3:#6f857b; --line:#263a32;
+  --learn:#6fc792; --learn-bg:#173326; --read:#93a9f2; --read-bg:#1b2442;
+  --cert:#e7b65c; --cert-bg:#382a12; --prove:#df93c8; --prove-bg:#3a1d31;
+  --warn:#f0946a; --warn-bg:#3b1f14; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--paper)}
+a{color:inherit}
+.wrap{max-width:1180px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 64px}
+.ic{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.mono{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+
+/* ---------- Hero ---------- */
+.hero{display:grid;gap:18px;padding-block:8px 20px}
+.eyebrow{color:var(--learn);display:flex;align-items:center;gap:8px}
+h1{font-size:clamp(34px,6vw,64px);line-height:.98;font-weight:800;letter-spacing:-.02em}
+h1 span{color:var(--learn)}
+.lede{max-width:66ch;color:var(--ink-2);font-size:16.5px;margin:0}
+.facts{display:flex;flex-wrap:wrap;gap:8px}
+.fact{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--ink-2)}
+.fact b{color:var(--ink);font-weight:600}
+
+/* Thesis schema */
+.schema{border:1.5px solid var(--ink);border-radius:14px;background:var(--card);padding:18px}
+.schema-h{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.schema-h h2{font-size:19px}
+.flow{display:flex;align-items:stretch;gap:0}
+.fnode{flex:1 1 0;min-width:0;border:1.5px solid var(--line);border-radius:12px;padding:12px;background:var(--card-2);display:grid;gap:6px;align-content:start}
+.fnode .ic{width:26px;height:26px}
+.fnode b{font-family:var(--f-display);font-size:15.5px;line-height:1.15}
+.fnode small{color:var(--ink-2);font-size:12.5px;line-height:1.35}
+.fnode .st{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;color:var(--ink-3)}
+.fnode.t5{border-color:color-mix(in srgb,var(--learn) 55%,var(--line));color:var(--ink)} .fnode.t5 .ic{color:var(--learn)}
+.fnode.t4{border-color:color-mix(in srgb,var(--read) 55%,var(--line))} .fnode.t4 .ic{color:var(--read)}
+.fnode.t6{border-color:color-mix(in srgb,var(--cert) 55%,var(--line))} .fnode.t6 .ic{color:var(--cert)}
+.farrow{flex:0 0 30px;display:grid;place-items:center;color:var(--ink-3)}
+.farrow svg{width:22px;height:22px}
+.loop{margin-top:10px;font-size:12.5px;color:var(--ink-2);display:flex;gap:8px;align-items:center}
+.loop svg{width:18px;height:18px;flex:none}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;padding:14px 0 6px;color:var(--ink-2);font-size:13px}
+.lg{display:inline-flex;align-items:center;gap:8px}
+.sym-start{width:14px;height:14px;border-radius:50%;background:var(--ink)}
+.sym-end{width:16px;height:16px;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center}
+.sym-end::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--ink)}
+.sym-act{width:26px;height:15px;border:1.8px solid var(--ink);border-radius:8px}
+.sym-bar{width:28px;height:5px;border-radius:3px;background:var(--ink)}
+.sym-dia{width:13px;height:13px;border:1.8px solid var(--ink);transform:rotate(45deg);margin:0 2px}
+.dot{width:10px;height:10px;border-radius:3px}
+
+/* Sticky bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;margin:10px 0 18px;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding-block:10px}
+.bar-in{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center}
+.prog{flex:1 1 220px;min-width:0;display:grid;gap:5px}
+.prog-top{display:flex;justify-content:space-between;gap:8px;font-size:13px}
+.prog-top b{font-variant-numeric:tabular-nums}
+.track{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.track i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--learn),var(--read),var(--cert),var(--prove));transition:width .4s ease}
+.sync{color:var(--ink-3);font-size:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:600 12.5px/1 var(--f-body);border:1.5px solid var(--line);background:var(--card);color:var(--ink-2);border-radius:999px;padding:7px 11px;cursor:pointer;display:inline-flex;gap:6px;align-items:center}
+.chip .dot{width:8px;height:8px;border-radius:50%}
+.chip[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);background:var(--card-2)}
+.chip:focus-visible,.item input:focus-visible+label,.gate input:focus-visible+label,a:focus-visible,.mchip:focus-visible{outline:2.5px solid var(--read);outline-offset:2px}
+
+/* ---------- Diagram ---------- */
+.diagram{display:grid;justify-items:center}
+.start{display:grid;justify-items:center;gap:6px}
+.start .sym-start{width:26px;height:26px}
+.arrow{width:2px;height:30px;background:var(--ink);position:relative;margin:0 auto}
+.arrow::after{content:"";position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);border:6px solid transparent;border-top:8px solid var(--ink);border-bottom:0}
+.arrow.short{height:20px}
+
+/* decision */
+.decision{width:100%;max-width:760px;display:grid;justify-items:center}
+.diamond{width:min(100%,340px);aspect-ratio:2.3/1;max-width:100%;background:var(--ink);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);display:grid;place-items:center;padding:0 64px;text-align:center}
+.diamond-in{position:absolute}
+.dia-wrap{position:relative;width:min(100%,340px);aspect-ratio:2.3/1;display:grid;place-items:center}
+.dia-wrap::before{content:"";position:absolute;inset:0;background:var(--ink);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.dia-wrap::after{content:"";position:absolute;inset:2.5px 5px;background:var(--card);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.dia-wrap p{position:relative;z-index:1;margin:0;padding:0 70px;text-align:center;font:600 13.5px/1.3 var(--f-body)}
+.branches{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:16px;position:relative}
+.branch-svg{width:100%;height:34px;display:block}
+.branch-svg path{fill:none;stroke:var(--ink);stroke-width:2}
+.bnode{border:1.5px solid var(--ink);border-radius:12px;background:var(--card);padding:12px 14px;display:grid;gap:4px}
+.bnode .mono{color:var(--ink-3)}
+.bnode b{font-family:var(--f-display);font-size:15px}
+.bnode small{color:var(--ink-2);font-size:13px}
+.blabel{display:inline-block;font:600 11px/1 var(--f-mono);letter-spacing:.08em;padding:4px 7px;border-radius:6px;background:var(--ink);color:var(--paper);justify-self:start}
+
+/* stage */
+.stage{width:100%;display:grid;justify-items:center;scroll-margin-top:110px}
+.snode{width:min(100%,640px);border:2px solid var(--ink);border-radius:18px;background:var(--card);padding:14px 16px;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;box-shadow:0 3px 0 var(--ink)}
+.sicon{width:48px;height:48px;border-radius:14px;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+.sicon .ic{width:26px;height:26px}
+.stitle{min-width:0;display:grid;gap:2px}
+.stitle .mono{color:var(--ink-3)}
+.stitle h2{font-size:clamp(19px,2.6vw,24px);line-height:1.1}
+.stitle p{margin:0;color:var(--ink-2);font-size:13.5px}
+.ring{--p:0;width:52px;height:52px;border-radius:50%;background:conic-gradient(var(--learn) calc(var(--p)*1%),var(--line) 0);display:grid;place-items:center}
+.ring span{width:40px;height:40px;border-radius:50%;background:var(--card);display:grid;place-items:center;font:600 11.5px/1 var(--f-mono);font-variant-numeric:tabular-nums}
+
+.forkbar{width:100%;height:7px;border-radius:4px;background:var(--ink);position:relative}
+.forkcap{display:flex;justify-content:center;width:100%;margin-top:-1px}
+.forklabel{font:600 10.5px/1 var(--f-mono);letter-spacing:.08em;color:var(--ink-3);text-transform:uppercase;padding:6px 0 0}
+.lanes{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;padding-top:18px;padding-bottom:18px;position:relative}
+.lane{min-width:0;position:relative;display:flex;flex-direction:column;gap:10px;border-radius:14px;padding:12px;background:color-mix(in srgb,var(--lc-bg) 70%,transparent);border:1.5px dashed color-mix(in srgb,var(--lc) 45%,transparent);transition:opacity .25s}
+.lane::before{content:"";position:absolute;top:-18px;left:50%;width:2px;height:18px;background:var(--ink)}
+.lane::after{content:"";position:absolute;bottom:-18px;left:50%;width:2px;height:18px;background:var(--ink)}
+.l-learn{--lc:var(--learn);--lc-bg:var(--learn-bg)} .l-read{--lc:var(--read);--lc-bg:var(--read-bg)}
+.l-cert{--lc:var(--cert);--lc-bg:var(--cert-bg)} .l-prove{--lc:var(--prove);--lc-bg:var(--prove-bg)}
+.lane-h{display:flex;align-items:center;gap:8px;color:var(--lc);font:600 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase}
+.lane-h .ic{width:18px;height:18px}
+.lane-h em{font-style:normal;margin-left:auto;color:var(--ink-3);font-weight:500;text-transform:none;letter-spacing:0}
+.empty{font-size:13px;color:var(--ink-3);font-style:italic;padding:4px 2px}
+body[data-focus="learn"] .lane:not(.l-learn), body[data-focus="read"] .lane:not(.l-read),
+body[data-focus="cert"] .lane:not(.l-cert), body[data-focus="prove"] .lane:not(.l-prove){opacity:.22}
+
+.item{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 11px;transition:border-color .2s,box-shadow .2s}
+.item input,.gate input{position:absolute;opacity:0;width:1px;height:1px}
+.box{width:20px;height:20px;border-radius:6px;border:1.8px solid var(--lc,var(--ink));cursor:pointer;display:grid;place-items:center;margin-top:1px;background:var(--card)}
+.box svg{width:13px;height:13px;stroke:var(--card);stroke-width:3;fill:none;opacity:0}
+input:checked+.box{background:var(--lc,var(--ink))}
+input:checked+.box svg{opacity:1}
+.item:has(input:checked){opacity:.66}
+.item:has(input:checked) .ititle a,.item:has(input:checked) .ititle span.t{text-decoration:line-through;text-decoration-color:var(--ink-3)}
+.ibody{min-width:0;display:grid;gap:4px}
+.ititle{display:flex;gap:7px;align-items:flex-start;font-weight:600;font-size:14px;line-height:1.3}
+.ititle .ic{width:17px;height:17px;color:var(--lc);margin-top:1px}
+.ititle a{text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--lc) 50%,transparent)}
+.ititle a:hover{border-bottom-color:var(--lc)}
+.ititle a .ext{width:12px;height:12px;display:inline-block;vertical-align:-1px;margin-left:3px;stroke-width:2.2;color:var(--ink-3)}
+.code{font:600 10.5px/1 var(--f-mono);padding:3px 5px;border-radius:5px;background:var(--lc);color:var(--card);margin-top:1px;flex:none}
+.inote{margin:0;font-size:12.8px;color:var(--ink-2);line-height:1.42}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.tag{font:500 11px/1 var(--f-body);padding:4px 7px;border-radius:99px;background:var(--card-2);border:1px solid var(--line);color:var(--ink-2)}
+.tag.free{background:var(--learn-bg);border-color:transparent;color:var(--learn)}
+.tag.paid{background:var(--cert-bg);border-color:transparent;color:var(--cert)}
+.tag.none{background:var(--card-2);color:var(--ink-3)}
+.tag.opt{background:var(--prove-bg);border-color:transparent;color:var(--prove)}
+.tag.flag{background:var(--warn-bg);border-color:transparent;color:var(--warn)}
+.flash{animation:flash 1.6s ease}
+@keyframes flash{0%,40%{box-shadow:0 0 0 3px var(--lc,var(--read))}100%{box-shadow:0 0 0 0 transparent}}
+
+.warnbox{width:min(100%,760px);display:flex;gap:10px;align-items:flex-start;background:var(--warn-bg);color:var(--ink);border-radius:10px;padding:10px 12px;font-size:13.5px;margin-top:14px}
+.warnbox .ic{color:var(--warn)}
+
+/* gate */
+.gate{width:min(100%,760px);display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center;padding:14px 18px 14px 14px;border:2px solid var(--ink);border-radius:14px;background:var(--card);position:relative}
+.gdia{width:46px;height:46px;display:grid;place-items:center;position:relative}
+.gdia::before{content:"";position:absolute;inset:7px;border:2px solid var(--ink);transform:rotate(45deg);border-radius:4px;background:var(--card-2)}
+.gdia svg{position:relative;width:18px;height:18px}
+.gate .mono{color:var(--ink-3)}
+.gtext{min-width:0;display:grid;gap:6px}
+.gtext p{margin:0;font-size:14.5px;font-weight:500}
+.gcheck{display:inline-flex;gap:8px;align-items:center;font-size:13px;color:var(--ink-2);cursor:pointer}
+.gate .box{--lc:var(--ink)}
+.gcheck .box{margin:0}
+
+/* end */
+.endnode{width:min(100%,760px);display:grid;justify-items:center;gap:12px;text-align:center}
+.endnode .sym-end{width:34px;height:34px;border-width:3px}
+.endnode .sym-end::after{width:18px;height:18px}
+.rq{border:2px solid var(--ink);border-radius:18px;background:var(--ink);color:var(--paper);padding:20px 22px;display:grid;gap:8px;box-shadow:0 3px 0 color-mix(in srgb,var(--ink) 60%,transparent)}
+.rq .mono{opacity:.7}
+.rq p{margin:0;font-family:var(--f-display);font-size:clamp(18px,2.5vw,23px);line-height:1.25;font-weight:600}
+.rq small{opacity:.78;font-size:13px}
+
+/* sections */
+.sec{margin-top:56px;display:grid;gap:14px}
+.sec-h{display:grid;gap:4px}
+.sec-h h2{font-size:clamp(22px,3vw,30px)}
+.sec-h p{margin:0;color:var(--ink-2);max-width:70ch}
+.matrix-wrap{overflow-x:auto;border:1.5px solid var(--ink);border-radius:14px;background:var(--card)}
+table.matrix{border-collapse:collapse;width:100%;min-width:900px;font-size:12.5px}
+.matrix th,.matrix td{border-bottom:1px solid var(--line);border-right:1px dashed var(--line);padding:9px 8px;vertical-align:top;text-align:left}
+.matrix thead th{font:600 11px/1.25 var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--ink-2);background:var(--card-2)}
+.matrix thead th b{display:block;color:var(--ink);font-family:var(--f-display);text-transform:none;letter-spacing:0;font-size:13.5px;margin-top:3px}
+.matrix tbody th{width:110px;font:600 11.5px/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--lc);white-space:nowrap}
+.matrix tbody th span{display:inline-flex;gap:6px;align-items:center}
+.matrix tr:last-child td,.matrix tr:last-child th{border-bottom:0}
+.mcell{display:flex;flex-wrap:wrap;gap:5px}
+.mchip{font:500 11.5px/1.15 var(--f-body);border:1px solid color-mix(in srgb,var(--lc) 40%,transparent);background:var(--lc-bg);color:var(--ink);border-radius:7px;padding:4px 7px;cursor:pointer;text-align:left}
+.mchip.done{opacity:.45;text-decoration:line-through}
+.mdash{color:var(--ink-3)}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.rcard{border:1.5px solid var(--line);border-radius:14px;background:var(--card);padding:16px;display:grid;gap:8px;align-content:start}
+.rcard h3{font-size:17px;display:flex;gap:8px;align-items:center}
+.rcard p{margin:0;font-size:13.5px;color:var(--ink-2)}
+.five{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.five div{border:1.5px solid var(--read);border-radius:10px;padding:10px;background:var(--read-bg);display:grid;gap:4px}
+.five b{font-family:var(--f-mono);font-size:11px;color:var(--read);letter-spacing:.06em}
+.five span{font-weight:600;font-size:14px}
+.five small{color:var(--ink-2);font-size:12px}
+.passes{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px;color:var(--ink-2)}
+.passes span{border:1px solid var(--line);border-radius:99px;padding:4px 10px;background:var(--card)}
+foot,.foot{display:block;margin-top:48px;color:var(--ink-3);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px}
+
+@media (max-width:980px){ .lanes{grid-template-columns:repeat(2,minmax(0,1fr))} .lane::before,.lane::after{display:none} }
+@media (max-width:820px){
+  .flow{flex-direction:column} .farrow{flex-basis:26px} .farrow svg{transform:rotate(90deg)}
+  .five{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:600px){
+  .lanes{grid-template-columns:1fr} .snode{grid-template-columns:auto 1fr;position:relative;padding-right:62px} .ring{position:absolute;top:12px;right:12px;width:42px;height:42px} .ring span{width:32px;height:32px;font-size:10px}
+  .branches{grid-template-columns:1fr} .branch-svg{display:none}
+  .dia-wrap p{padding:0 54px;font-size:12.5px}
+  .gate{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){ *{transition:none!important;animation:none!important} html{scroll-behavior:auto} }
+html{scroll-behavior:smooth}
+
+/* Personal progress tracker */
+.wrap[hidden]{display:none!important}
+.login-screen{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--paper);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px}
+.login-card{width:min(100%,460px);padding:32px;border:1.5px solid var(--line);border-radius:20px;background:var(--card);box-shadow:0 18px 55px rgba(16,36,29,.1)}
+.login-eyebrow,.dashboard-eyebrow{color:var(--learn)}
+.login-card h1{margin-top:16px;font-size:clamp(34px,7vw,48px)}
+.login-card h1 span{color:var(--learn)}
+.login-card>p{color:var(--ink-2);margin:12px 0 22px}
+.login-card form{display:grid;gap:9px}
+.login-card form label,.control-label{font-size:12px;font-weight:600;color:var(--ink-2)}
+.login-card input{width:100%;border:1.5px solid var(--line);background:var(--card-2);color:var(--ink);border-radius:10px;padding:12px 13px;font:inherit}
+.primary-button,.quiet-button,.retry-button,.next-button{font:600 13px var(--f-body);border-radius:9px;padding:9px 13px;cursor:pointer}
+.primary-button{margin-top:7px;border:1px solid var(--learn);background:var(--learn);color:#fff;padding:12px}
+.primary-button:disabled{opacity:.65;cursor:wait}
+.login-card small{color:var(--ink-3)}
+.login-message{min-height:20px;font-size:13px!important;color:var(--warn)!important;margin:12px 0!important}
+.bar .prog-top{align-items:center}
+.retry-button{border:1px solid var(--warn);background:var(--warn-bg);color:var(--warn);padding:4px 8px;font-size:11px}
+.retry-button[hidden]{display:none}
+.dashboard{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:20px;margin:10px 0 24px;box-shadow:0 2px 0 rgba(16,36,29,.04)}
+.dashboard-top{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.dashboard-top h2{font-size:25px;margin-top:4px}
+.dashboard-top p{margin:5px 0 0;color:var(--ink-2);font-size:13.5px}
+.dashboard-actions{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.quiet-button{border:1px solid var(--line);background:var(--card-2);color:var(--ink-2)}
+.quiet-button:hover{border-color:var(--ink-3);color:var(--ink)}
+.signout-button{background:transparent}
+.backup-message{margin:4px 0 0;min-height:16px;font-size:11px;color:var(--ink-3);text-align:right}
+.stats-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:12px 0}
+.stat-card{border:1px solid var(--line);background:var(--card-2);border-radius:11px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;color:var(--ink-2);font-size:13px}
+.stat-card b{font:700 24px var(--f-display);color:var(--ink);font-variant-numeric:tabular-nums}
+.stat-finished b{color:var(--learn)} .stat-active b{color:var(--prove)}
+.focus-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:10px}
+.focus-card,.next-card{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:13px 15px;min-width:0}
+.focus-heading{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px}
+.focus-heading h3{font-size:16px}
+.focus-heading>span{min-width:25px;height:25px;border-radius:50%;display:grid;place-items:center;background:var(--prove-bg);color:var(--prove);font:600 12px var(--f-mono)}
+.focus-task{width:100%;border:0;border-top:1px solid var(--line);background:transparent;color:var(--ink);padding:10px 0;display:grid;grid-template-columns:9px minmax(0,1fr) 18px;gap:10px;text-align:left;align-items:center;cursor:pointer}
+.focus-task b,.focus-task small,.next-card b,.next-card small{display:block}
+.focus-task b{font-size:13px;line-height:1.3}
+.focus-task small{color:var(--ink-3);font-size:11px;margin-top:3px}
+.focus-task>.ic{width:16px;color:var(--ink-3)}
+.focus-dot{width:8px;height:8px;border-radius:50%;background:var(--prove)}
+.focus-empty{margin:8px 0 2px;color:var(--ink-3);font-size:12.5px}
+.next-card{display:grid;align-content:start;gap:7px;background:var(--learn-bg);border-color:color-mix(in srgb,var(--learn) 30%,var(--line))}
+.next-kicker{font:500 10px var(--f-mono);letter-spacing:.05em;color:var(--learn)}
+.next-card b{font:700 17px/1.2 var(--f-display);color:var(--ink)}
+.next-card small{font-size:11.5px;color:var(--ink-2)}
+.next-button{justify-self:start;margin-top:5px;border:1px solid color-mix(in srgb,var(--learn) 40%,var(--line));background:var(--card);color:var(--learn);display:inline-flex;align-items:center;gap:6px}
+.next-button .ic{width:15px;height:15px}
+.item{grid-template-columns:minmax(0,1fr);gap:9px}
+.item[data-state="doing"]{border-color:var(--prove);box-shadow:0 0 0 1px color-mix(in srgb,var(--prove) 28%,transparent)}
+.item[data-state="done"]{opacity:.78}
+.item[data-state="done"] .ititle a,.item[data-state="done"] .ititle span.t{text-decoration:line-through;text-decoration-color:var(--ink-3)}
+.task-controls{display:flex;align-items:center;gap:8px}
+.task-status{width:100%;max-width:175px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--card-2);color:var(--ink);font:500 12px var(--f-body)}
+.task-status:focus-visible,.task-notes textarea:focus-visible,.login-card input:focus-visible,button:focus-visible,summary:focus-visible{outline:2.5px solid var(--read);outline-offset:2px}
+.task-status option{background:var(--card)}
+.task-notes{border-top:1px solid var(--line);padding-top:7px}
+.task-notes summary{display:flex;justify-content:space-between;gap:10px;cursor:pointer;color:var(--ink-2);font-size:12px;font-weight:600;list-style:none}
+.task-notes summary::-webkit-details-marker{display:none}
+.task-notes summary::after{content:"+";color:var(--learn);font-size:15px;line-height:1;margin-left:auto}
+.task-notes[open] summary::after{content:"−"}
+.note-state{color:var(--ink-3);font-weight:400;font-size:11px}
+.task-notes textarea{display:block;width:100%;min-height:75px;resize:vertical;margin-top:8px;padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--card-2);color:var(--ink);font:12px/1.5 var(--f-body)}
+.gate{grid-template-columns:auto minmax(0,1fr);}
+.gate[data-state="done"]{border-color:var(--learn)}
+.gate[data-state="doing"]{border-color:var(--prove)}
+.gate-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:5px}
+.gate-prompt{font-size:13px;color:var(--ink-2);margin-right:auto}
+.gate-status{max-width:160px}
+.mchip.doing{border-color:var(--prove);color:var(--prove);background:var(--prove-bg)}
+#sync{color:var(--ink-3)}
+@media(max-width:760px){.dashboard-top{display:grid}.dashboard-actions{justify-content:flex-start}.backup-message{text-align:left}.focus-grid{grid-template-columns:1fr}}
+@media(max-width:500px){.login-card{padding:24px}.dashboard{padding:15px}.dashboard-top h2{font-size:22px}.dashboard-actions .quiet-button{font-size:12px;padding:8px 10px}.stats-grid{gap:6px}.stat-card{padding:10px 9px;display:grid;gap:2px;font-size:11px}.stat-card b{font-size:21px}.gate{grid-template-columns:1fr}.gate-actions{align-items:flex-start}.task-status{max-width:none}}</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h12l-2.5 4L17 12H5"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 4v16h16"/><path d="M7 15l4-4 3 2 6-6"/><circle cx="20" cy="7" r="1"/></symbol>
+    <symbol id="i-net" viewBox="0 0 24 24"><circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="M7 7l3.3 3.6M7 17l3.3-3.6M13.7 10.6L17 7M13.7 13.4L17 17"/></symbol>
+    <symbol id="i-robot" viewBox="0 0 24 24"><path d="M3 21h10M8 21v-3"/><circle cx="8" cy="16" r="2"/><path d="M9.3 14.5L13 9.5"/><circle cx="14" cy="8" r="2"/><path d="M16 8h3M19 8l2-3M19 8l2 3"/></symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19C5 10 11 4 20 4c0 9-6 15-15 15z"/><path d="M5 19l8-8"/></symbol>
+    <symbol id="i-chip" viewBox="0 0 24 24"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M10 7V3M14 7V3M10 21v-4M14 21v-4M7 10H3M7 14H3M21 10h-4M21 14h-4"/><rect x="10" y="10" width="4" height="4"/></symbol>
+    <symbol id="i-course" viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2.2 9 2.2 12 0v-5M22 9v6"/></symbol>
+    <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9l5 3-5 3z"/></symbol>
+    <symbol id="i-paper" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h7M9 16h7M9 8h3"/></symbol>
+    <symbol id="i-medal" viewBox="0 0 24 24"><path d="M8 3l4 7 4-7"/><circle cx="12" cy="15" r="5.5"/><path d="M12 12.5l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5.4 9.6A1.6 1.6 0 0 0 6 21h12a1.6 1.6 0 0 0 1.4-2.4L14 9V3"/><path d="M7.5 15h9"/></symbol>
+    <symbol id="i-task" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.5l9.5 16.5h-19z"/><path d="M12 10v4.5M12 17.2v.1"/></symbol>
+    <symbol id="i-ext" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v6H4V6h6"/></symbol>
+    <symbol id="i-thermo" viewBox="0 0 24 24"><path d="M10 13.5V5a2 2 0 0 1 4 0v8.5a4 4 0 1 1-4 0z"/><path d="M12 9v6"/></symbol>
+    <symbol id="i-twin" viewBox="0 0 24 24"><path d="M3 10l6-4 6 4v9H3z"/><path d="M9 6l6-3 6 4v9h-6" stroke-dasharray="2 2.2"/><path d="M7 19v-4h4v4"/></symbol>
+    <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15M14 6l6 6-6 6"/></symbol>
+    <symbol id="i-cycle" viewBox="0 0 24 24"><path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/><path d="M4 20a2 2 0 0 0 2 2h13v-4"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><circle cx="12" cy="17" r="1.2"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></symbol>
+    <symbol id="i-scope" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/></symbol>
+  </defs>
+</svg>
+
+<div class="wrap" id="app" hidden>
+  <header class="hero">
+    <div class="eyebrow mono"><svg class="ic"><use href="#i-leaf"/></svg> First-year PhD · AI learning plan</div>
+    <h1>From first script to a <span>compact VLA</span> in the greenhouse</h1>
+    <p class="lede">One path to follow, with courses, papers and certificates running in parallel at every stage. Each stage ends at a gate: move forward only when you can do what the gate says.</p>
+    <div class="facts">
+      <span class="fact"><svg class="ic" style="width:15px;height:15px"><use href="#i-clock"/></svg>Pace <b>6–8 h / week</b></span>
+      <span class="fact"><b>7</b> stages</span>
+      <span class="fact"><b>20</b> papers in reading order</span>
+      <span class="fact"><b>8</b> courses &amp; certificates</span>
+      <span class="fact">Prepared <b>10 Nov 2026</b></span>
+    </div>
+
+    <section class="schema" aria-labelledby="sch-h">
+      <div class="schema-h"><h2 id="sch-h">Your thesis as a system</h2><span class="mono" style="color:var(--ink-3)">What every stage builds toward</span></div>
+      <div class="flow">
+        <div class="fnode t5"><svg class="ic"><use href="#i-thermo"/></svg><span class="st">STAGE 5</span><b>Greenhouse sensors</b><small>Temperature, humidity, climate measurements</small></div>
+        <div class="farrow"><svg class="ic"><use href="#i-arrow"/></svg></div>
+        <div class="fnode t5"><svg class="ic"><use href="#i-twin"/></svg><span class="st">STAGE 5</span><b>Digital twin + PIML</b><small>Physical model kept current by measurements</small></div>
+        <div class="farrow"><svg class="ic"><use href="#i-arrow"/></svg></div>
+        <div class="fnode t5"><svg class="ic"><use href="#i-target"/></svg><span class="st">STAGE 5 → 4</span><b>State &amp; constraints</b><small>Useful environmental context for the robot</small></div>
+        <div class="farrow"><svg class="ic"><use href="#i-arrow"/></svg></div>
+        <div class="fnode t4"><svg class="ic"><use href="#i-robot"/></svg><span class="st">STAGES 3 · 4</span><b>Compact VLA policy</b><small>Vision + language + robot state → action</small></div>
+        <div class="farrow"><svg class="ic"><use href="#i-arrow"/></svg></div>
+        <div class="fnode t6"><svg class="ic"><use href="#i-chip"/></svg><span class="st">STAGE 6</span><b>On one edge device</b><small>One manipulation task; size, latency, energy, success</small></div>
+      </div>
+      <div class="loop"><svg class="ic"><use href="#i-cycle"/></svg>The climate twin and robot manipulation are linked work packages, each with its own data and validation plan.</div>
+    </section>
+
+    <div class="legend" aria-label="Diagram legend">
+      <span class="lg"><span class="sym-start"></span>Start</span>
+      <span class="lg"><span class="sym-act"></span>Stage</span>
+      <span class="lg"><span class="sym-bar"></span>Fork / join (parallel tracks)</span>
+      <span class="lg"><span class="sym-dia"></span>Decision / gate</span>
+      <span class="lg"><span class="sym-end"></span>End</span>
+      <span class="lg"><span class="dot" style="background:var(--learn)"></span>Learn</span>
+      <span class="lg"><span class="dot" style="background:var(--read)"></span>Read</span>
+      <span class="lg"><span class="dot" style="background:var(--cert)"></span>Certify</span>
+      <span class="lg"><span class="dot" style="background:var(--prove)"></span>Prove</span>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div class="bar-in">
+      <div class="prog">
+        <div class="prog-top"><span><b id="pc-done">0</b> of <b id="pc-total">0</b> steps done</span><span class="sync" id="sync" role="status" aria-live="polite">Loading saved progress…</span><button class="retry-button" id="retry-save" type="button" hidden>Retry save</button></div>
+        <div class="track"><i id="pc-bar"></i></div>
+      </div>
+      <div class="chips" role="group" aria-label="Highlight a track">
+        <button class="chip" id="f-all" data-f="all" aria-pressed="true">All tracks</button>
+        <button class="chip" id="f-learn" data-f="learn" aria-pressed="false"><span class="dot" style="background:var(--learn)"></span>Learn</button>
+        <button class="chip" id="f-read" data-f="read" aria-pressed="false"><span class="dot" style="background:var(--read)"></span>Read</button>
+        <button class="chip" id="f-cert" data-f="cert" aria-pressed="false"><span class="dot" style="background:var(--cert)"></span>Certify</button>
+        <button class="chip" id="f-prove" data-f="prove" aria-pressed="false"><span class="dot" style="background:var(--prove)"></span>Prove</button>
+      </div>
+    </div>
+  </div>
+
+  <section class="dashboard" id="dashboard" aria-labelledby="dashboard-title">
+    <div class="dashboard-top">
+      <div><span class="mono dashboard-eyebrow">YOUR WORKSPACE</span><h2 id="dashboard-title">Pick up where you left off</h2><p>Your notes stay with the task. Every change saves automatically.</p></div>
+      <div class="dashboard-actions">
+        <button class="quiet-button" id="export-backup" type="button">Export backup</button>
+        <button class="quiet-button" id="import-backup" type="button">Import backup</button>
+        <input id="backup-file" type="file" accept="application/json,.json" hidden>
+        <button class="quiet-button signout-button" id="logout" type="button">Sign out</button>
+      </div>
+    </div>
+    <p class="backup-message" id="backup-message" role="status" aria-live="polite"></p>
+    <div class="stats-grid">
+      <div class="stat-card stat-finished"><span>Finished</span><b id="stat-finished">0</b></div>
+      <div class="stat-card stat-active"><span>In progress</span><b id="stat-active">0</b></div>
+      <div class="stat-card"><span>Still to do</span><b id="stat-remaining">0</b></div>
+    </div>
+    <div class="focus-grid">
+      <section class="focus-card" aria-labelledby="focus-title"><div class="focus-heading"><h3 id="focus-title">What I’m working on</h3><span id="focus-count">0</span></div><div id="focus-list"></div></section>
+      <section class="next-card" id="next-step" aria-label="Suggested next step"></section>
+    </div>
+  </section>
+  <main class="diagram" id="diagram">
+    <div class="start"><span class="sym-start" role="img" aria-label="Start"></span><span class="mono" style="color:var(--ink-3)">Start · this week</span></div>
+    <div class="arrow"></div>
+    <div id="stages"></div>
+  </main>
+
+  <section class="sec" aria-labelledby="mx-h">
+    <div class="sec-h"><h2 id="mx-h">Parallel tracks at a glance</h2><p>Read across a row to follow one track; read down a column to see everything that runs together in a stage. Tap any item to jump to it.</p></div>
+    <div class="matrix-wrap"><table class="matrix" id="matrix"></table></div>
+  </section>
+
+  <section class="sec" aria-labelledby="fl-h">
+    <div class="sec-h"><h2 id="fl-h">How to read every paper</h2><p>Read one paper at a time. On a first pass, read the abstract, introduction, key diagrams and conclusion, and skip derivations you don't yet understand. Then write five short notes.</p></div>
+    <div class="five">
+      <div><b>1</b><span>Problem</span><small>What gap does it address?</small></div>
+      <div><b>2</b><span>Method</span><small>What did they build or propose?</small></div>
+      <div><b>3</b><span>Data</span><small>Which robot, sensors, dataset?</small></div>
+      <div><b>4</b><span>Result</span><small>What was measured, under which conditions?</small></div>
+      <div><b>5</b><span>Limitation</span><small>What does it not show?</small></div>
+    </div>
+    <div class="passes"><span>Pass 1 · abstract, intro, figures, conclusion</span><svg class="ic" style="width:16px;height:16px"><use href="#i-arrow"/></svg><span>Five-line note in Zotero</span><svg class="ic" style="width:16px;height:16px"><use href="#i-arrow"/></svg><span>Pass 2 · equations, once the course covers them</span></div>
+  </section>
+
+  <section class="sec" aria-labelledby="tp-h">
+    <div class="sec-h"><h2 id="tp-h">Keep these precise in your proposal</h2></div>
+    <div class="cards">
+      <div class="rcard"><h3><svg class="ic" style="color:var(--read)"><use href="#i-chip"/></svg>QLoRA</h3><p>Reduces the memory needed to fine-tune a quantized base model. It does not turn a 7B model into one with fewer than 1.5B parameters. For that, use distillation, structured pruning or a smaller architecture. Quantization changes weight precision; real speed-ups depend on hardware and software support.</p></div>
+      <div class="rcard"><h3><svg class="ic" style="color:var(--cert)"><use href="#i-gauge"/></svg>10 Hz = 100 ms</h3><p>Ten decisions per second leaves about 100 ms for a full cycle. Measure VLA inference separately from sensor capture, messaging, safety checks and low-level motor control.</p></div>
+      <div class="rcard"><h3><svg class="ic" style="color:var(--learn)"><use href="#i-shield"/></svg>PIML and safety</h3><p>A physics-informed loss encourages consistency with equations. It does not prove that robot actions are safe, and a low physics residual does not prove real-greenhouse accuracy.</p></div>
+      <div class="rcard"><h3><svg class="ic" style="color:var(--prove)"><use href="#i-scope"/></svg>Scope</h3><p>One greenhouse task, one edge platform. Confirm with your supervisor which data, greenhouse, robot and edge board actually exist before committing to the full plan.</p></div>
+    </div>
+  </section>
+
+  <p class="foot">Built from your <i>Thesis AI Beginner Guide</i> (PDF) and <i>Thesis AI Beginner Roadmap</i> (Excel). Certificate prices and availability change, so recheck before paying or booking. Progress is saved to your account when you're signed in, otherwise in this browser.</p>
+</div>
+
+<script>
+const S = [
+ {id:"s0",n:0,icon:"flag",title:"Set the research boundaries",timing:"This week",
+  focus:"Know what exists before planning what to build.",
+  learn:[
+   {id:"s0a",k:"task",t:"Meet your supervisor",s:"Supervisor meeting",note:"List what already exists: greenhouse data, sensors, robot, edge board, compute."},
+   {id:"s0b",k:"task",t:"Create a Zotero library and a GitHub account",s:"Zotero + GitHub accounts",note:"These hold your paper notes and experiments from day one."}],
+  read:[], readEmpty:"No papers yet. Reading starts in Stage 2.",
+  cert:[], certEmpty:"Nothing to certify yet.",
+  prove:[{id:"s0e",k:"evidence",t:"One possible physical task + one candidate device, written down",s:"Task + device note"}],
+  gate:"You have written down one candidate task and one candidate device. Don't promise all platforms or all papers yet."},
+ {id:"s1",n:1,icon:"code",title:"Python & math basics",timing:"Weeks 1–8, flexible",
+  focus:"Python, vectors, matrices, probability, reference management and Git.",
+  learn:[
+   {id:"r1",k:"course",t:"CS50 Introduction to Programming with Python",s:"CS50 Python",u:"https://cs50.harvard.edu/python/",note:"Do the problem sets and examples, not only the lectures."},
+   {id:"r2",k:"video",t:"Essence of Linear Algebra · 3Blue1Brown",s:"3Blue1Brown",u:"https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab",note:"A few videos at a time. Pause and draw examples. For intuition, not grades.",par:"Alongside Python"},
+   {id:"r3",k:"task",t:"Linear Algebra · Khan Academy",s:"Khan Academy",u:"https://www.khanacademy.org/math/linear-algebra",note:"Practice vectors, matrix transformations and coordinate systems.",par:"Alongside Python"},
+   {id:"r5",k:"code",t:"GitHub Skills",s:"GitHub Skills",u:"https://skills.github.com/",note:"Start with Introduction to GitHub. Keep every notebook in a repository.",par:"Alongside Python"}],
+  read:[
+   {id:"r4",k:"book",t:"Zotero Quick Start Guide",s:"Zotero setup",u:"https://www.zotero.org/support/quick_start_guide",note:"Create folders: VLA · Digital twins · PIML · Compression · Edge benchmarking."}],
+  cert:[
+   {id:"c1",k:"cert",code:"C1",t:"CS50 certificate",s:"CS50 cert",u:"https://cs50.harvard.edu/python/",note:"Free CS50 certificate after ≥70% on each required problem and the final project.",tags:[["free","Free certificate"],["paid","Verified edX: paid"]]}],
+  prove:[{id:"s1e",k:"evidence",t:"A notebook that reads a CSV + a small set of organized paper notes",s:"CSV notebook"}],
+  gate:"You can read a CSV, run a small notebook, explain what a vector and a matrix represent, and save code with version history."},
+ {id:"s2",n:2,icon:"chart",title:"Machine-learning foundations",timing:"After Python basics",
+  focus:"Regression, classification, data splits, overfitting and evaluation.",
+  learn:[
+   {id:"r6",k:"course",t:"Machine Learning Specialization · DeepLearning.AI & Stanford",s:"ML Specialization",u:"https://www.coursera.org/specializations/machine-learning-introduction",note:"Three beginner courses. Focus on what the model learns and why train and test data stay separate."},
+   {id:"s2a",k:"task",t:"Review probability, derivatives and basic statistics",s:"Math review",note:"As they appear in the course. No need to front-load them."}],
+  read:[
+   {id:"r7",k:"paper",code:"P1",t:"VLA Models for Robotics: A Review Towards Real-World Applications",s:"P1 VLA review",u:"https://arxiv.org/abs/2510.07077",note:"Your field map of models, datasets, evaluation and deployment.",tags:[["flag","arXiv: check latest version before citing"]]},
+   {id:"r8",k:"paper",code:"P2",t:"Digital Twins in Greenhouse Horticulture: A Review",s:"P2 Greenhouse DT review",u:"https://doi.org/10.1016/j.compag.2022.107183",note:"Start with the figures and open questions. What makes a twin more than a dashboard?"}],
+  cert:[
+   {id:"c2",k:"cert",code:"C2",t:"Machine Learning Specialization certificate",s:"ML Spec cert",u:"https://www.coursera.org/specializations/machine-learning-introduction",note:"Finish the exercises first. Check current price and enrollment options.",tags:[["paid","Paid"],["opt","Optional"]]}],
+  prove:[{id:"s2e",k:"evidence",t:"A simple model with a held-out test set and a clear error metric",s:"First ML model",note:"Use greenhouse-temperature data if you can get suitable data."}],
+  gate:"You can train a simple model, hold out test data, explain MAE or RMSE, and say why the test result is or isn't trustworthy."},
+ {id:"s3",n:3,icon:"net",title:"Deep learning & a first baseline",timing:"After ML foundations",
+  focus:"PyTorch, neural networks and basic vision.",
+  learn:[
+   {id:"r9",k:"code",t:"PyTorch: Learn the Basics",s:"PyTorch basics",u:"https://docs.pytorch.org/tutorials/beginner/basics/",note:"Tensors, data loading, models, training loops, evaluation."},
+   {id:"r10",k:"course",t:"Deep Learning Specialization · DeepLearning.AI",s:"Deep Learning Spec.",u:"https://www.deeplearning.ai/specializations/deep-learning",note:"About 127 hours, intermediate. Neural nets, optimization, vision, transformers. Steady pace.",tags:[["none","~127 h"]]},
+   {id:"r21",k:"course",t:"Hugging Face LLM Course",s:"HF LLM Course",u:"https://huggingface.co/learn/llm-course/chapter1/1",note:"Tokenization, Transformers, datasets, fine-tuning. Use the Colab path if local setup is hard."}],
+  read:[
+   {id:"r12",k:"paper",code:"P3",t:"Attention Is All You Need",s:"P3 Attention",u:"https://arxiv.org/abs/1706.03762",note:"Abstract, architecture figure and conclusion first. Return to the equations after studying attention in a course."}],
+  cert:[
+   {id:"c3",k:"cert",code:"C3",t:"Deep Learning Specialization certificate",s:"DL Spec cert",u:"https://www.deeplearning.ai/specializations/deep-learning",note:"Take it after ML foundations.",tags:[["paid","Paid"]]},
+   {id:"c4",k:"cert",code:"C4",t:"Hugging Face LLM Course",s:"HF LLM (no cert)",u:"https://huggingface.co/learn/llm-course/chapter1/1",note:"Free to study. Learn it for the skills.",tags:[["none","No formal certificate"]]}],
+  prove:[{id:"r11",k:"evidence",t:"Mini-project: greenhouse sensor-prediction baseline",s:"Sensor baseline",note:"Predict temperature or humidity. Keep a held-out test set, report MAE or RMSE, save the notebook, data description and results."}],
+  warn:"Don't begin by reproducing a large VLA. Get comfortable with a small neural network and a repeatable experiment first.",
+  gate:"You have a reproducible notebook with a baseline, a held-out test set, and MAE or RMSE."},
+ {id:"s4",n:4,icon:"robot",title:"Robotics & VLA models",timing:"After Python and ML basics",
+  focus:"Robot observations, actions, demonstrations and VLA papers.",
+  learn:[
+   {id:"r13",k:"course",t:"Hugging Face Robotics Course",s:"HF Robotics",u:"https://huggingface.co/learn/robotics-course/en/unit0/1",note:"Published beginner units with LeRobot and simulation. Observations, actions, demonstrations, coordinate frames, control rates."}],
+  read:[
+   {id:"r14",k:"paper",code:"P4",t:"RT-2: Vision-Language-Action Models",s:"P4 RT-2",u:"https://arxiv.org/abs/2307.15818",note:"The early VLA idea: web vision-language knowledge + robot action data."},
+   {id:"r15",k:"paper",code:"P5",t:"Open X-Embodiment: Robotic Learning Datasets and RT-X",s:"P5 Open X-Embodiment",u:"https://arxiv.org/abs/2310.08864",note:"The shared robot-data problem, before comparing architectures."},
+   {id:"r16",k:"paper",code:"P6",t:"OpenVLA: An Open-Source Vision-Language-Action Model",s:"P6 OpenVLA",u:"https://arxiv.org/abs/2406.09246",note:"Inputs/outputs, training data, fine-tuning, deployment. 7B is a baseline, not a requirement."},
+   {id:"r17",k:"paper",code:"P7",t:"TinyVLA: Fast, Data-Efficient VLA Models",s:"P7 TinyVLA",u:"https://arxiv.org/abs/2409.12514",note:"Most relevant to compact policies. Record the exact hardware and latency conditions."},
+   {id:"r18",k:"paper",code:"P8",t:"Octo: An Open-Source Generalist Robot Policy",s:"P8 Octo",u:"https://arxiv.org/abs/2405.12213",note:"Comparison point for generalist policies and action interfaces."},
+   {id:"r19",k:"paper",code:"P9",t:"Diffusion Policy: Visuomotor Policy Learning via Action Diffusion",s:"P9 Diffusion Policy",u:"https://arxiv.org/abs/2303.04137",note:"An alternative to VLAs. Focus on receding-horizon control and action chunks."},
+   {id:"r20",k:"paper",code:"P10",t:"DINOv2: Robust Visual Features without Supervision",s:"P10 DINOv2",u:"https://arxiv.org/abs/2304.07193",note:"Abstract and figures: the visual features VLA systems build on."}],
+  cert:[
+   {id:"c5",k:"cert",code:"C5",t:"Hugging Face Robotics Course",s:"HF Robotics (no cert)",u:"https://huggingface.co/learn/robotics-course/en/unit0/1",note:"Free. Some units may still be in development.",tags:[["none","No formal certificate"]]},
+   {id:"c7",k:"cert",code:"C7",t:"Hugging Face AI Agents Course",s:"HF Agents cert",u:"https://huggingface.co/learn/agents-course/en/unit0/introduction",note:"Unit 1 gives a fundamentals certificate; completion needs an assignment and final challenge. Not a substitute for robotics or VLA training.",tags:[["free","Free certificate"],["opt","Optional"]]}],
+  prove:[{id:"s4e",k:"evidence",t:"A simulated manipulation task + a clear summary of one VLA model",s:"Sim task + VLA summary"}],
+  warn:"A VLA is not a language model attached to a robot. It needs visual inputs, robot action representations and suitable robot data.",
+  gate:"You can describe what a VLA receives, what action it produces, which robot demonstrations it uses, and what conditions its reported results cover."},
+ {id:"s5",n:5,icon:"leaf",title:"Digital twins & physics-informed learning",timing:"After ML and basic differential equations",
+  focus:"Greenhouse sensing, climate balances and physics-informed prediction.",
+  learn:[
+   {id:"s5a",k:"task",t:"Write a simple energy or moisture balance",s:"Energy / moisture balance",note:"Start with temperature or humidity. State units and assumptions."},
+   {id:"s5b",k:"task",t:"Study how sensors, climate model and virtual state stay synchronized",s:"Twin synchronization"}],
+  read:[
+   {id:"r22",k:"paper",code:"P11",t:"Physics-Informed Machine Learning (review)",s:"P11 PIML review",u:"https://doi.org/10.1038/s42254-021-00314-5",note:"Overview and figures first. PINNs are one family within PIML."},
+   {id:"r23",k:"paper",code:"P12",t:"Digital Twins in Agriculture: A State-of-the-Art Review",s:"P12 Agri DT review",u:"https://doi.org/10.1016/j.atech.2022.100094",note:"Broader agricultural context, limitations and research gaps."},
+   {id:"r24",k:"paper",code:"P13",t:"IoT-Based Spatial Monitoring and Environment Prediction for Smart Greenhouses",s:"P13 IoT greenhouse",u:"https://ieeexplore.ieee.org/document/10128933",note:"Sensor placement, measured variables, collection period, validation."},
+   {id:"r25",k:"paper",code:"P14",t:"Physics-Informed Neural Learning for Greenhouse Climate Dynamics",s:"P14 PINL greenhouse",u:"https://arxiv.org/abs/2605.02524",note:"Evaluated on a controlled synthetic benchmark. Early evidence, not a validated real-greenhouse result.",tags:[["flag","Recent preprint"]]},
+   {id:"r26",k:"paper",code:"P15",t:"PINNs for Natural Ventilation of a Greenhouse",s:"P15 PINN ventilation",u:"https://doi.org/10.1016/j.biosystemseng.2026.104440",note:"Applied airflow example. Note its boundary conditions. Access through your university library.",tags:[["none","2026"]]},
+   {id:"r27",k:"paper",code:"P16",t:"CFD-Based Digital Twins for Greenhouse Temperature Monitoring",s:"P16 CFD twin",u:"https://doi.org/10.1016/j.iot.2026.102064",note:"Synchronized CFD + IoT twin. Its focus is monitoring and prediction, not robot control.",tags:[["none","2026"]]}],
+  cert:[], certEmpty:"No certificate here. Your validated model is the credential.",
+  prove:[{id:"s5e",k:"evidence",t:"A small physics-informed model compared with a data-only baseline",s:"PIML vs data-only",note:"Validate both against real measurements."}],
+  warn:"A low physics-residual value alone doesn't prove predictions are accurate on a real greenhouse.",
+  gate:"Your model has stated units, assumptions, physical residuals, test data and known limitations."},
+ {id:"s6",n:6,icon:"chip",title:"Compression & edge deployment",timing:"After a baseline and platform selection",
+  focus:"One hardware target: model size, latency, energy and task success.",
+  learn:[
+   {id:"s6a",k:"task",t:"Choose one edge board your lab can access",s:"Pick edge board"},
+   {id:"r33",k:"course",t:"NVIDIA Deep Learning Institute & Jetson tutorials",s:"NVIDIA DLI / Jetson",u:"https://developer.nvidia.com/embedded/learn/tutorials",note:"Pick a practical course tied to your chosen edge platform."},
+   {id:"s6b",k:"task",t:"Compare a compact policy with a larger teacher",s:"Student vs teacher",note:"Start from a working policy. Measure size, memory, latency, energy and closed-loop task success."}],
+  read:[
+   {id:"r28",k:"paper",code:"P17",t:"Distilling the Knowledge in a Neural Network",s:"P17 Distillation",u:"https://arxiv.org/abs/1503.02531",note:"The teacher–student idea, before VLA compression papers."},
+   {id:"r29",k:"paper",code:"P18",t:"Deep Compression: Pruning, Quantization, Huffman Coding",s:"P18 Deep Compression",u:"https://arxiv.org/abs/1510.00149",note:"Separate storage reduction, parameter count and actual inference speed."},
+   {id:"r30",k:"paper",code:"P19",t:"QLoRA: Efficient Finetuning of Quantized LLMs",s:"P19 QLoRA",u:"https://arxiv.org/abs/2305.14314",note:"Memory-efficient fine-tuning. It does not reduce parameter count."},
+   {id:"r31",k:"paper",code:"P20",t:"MLPerf Tiny Benchmark",s:"P20 MLPerf Tiny",u:"https://arxiv.org/abs/2106.07597",note:"Borrow its accuracy, latency and energy principles. Don't claim it benchmarks a VLA."}],
+  cert:[
+   {id:"c6",k:"cert",code:"C6",t:"NVIDIA DLI course certificate",s:"NVIDIA DLI cert",u:"https://developer.nvidia.com/embedded/learn/tutorials",note:"Selected courses offer certificates. Content, price and availability vary.",tags:[["opt","Optional"],["paid","Varies"]]},
+   {id:"c8",k:"cert",code:"C8",t:"NVIDIA-Certified Associate: Generative AI & LLMs",s:"NVIDIA LLM exam",u:"https://www.nvidia.com/en-us/learn/certification/generative-ai-llm-associate/",note:"$125, remote proctored, 60 min, 50–60 questions, valid 2 years. Recheck before booking. Not a thesis prerequisite.",tags:[["opt","Optional exam"],["paid","$125"]]}],
+  prove:[{id:"s6e",k:"evidence",t:"A repeatable benchmark report for your chosen device",s:"Benchmark report",note:"Exact device, power mode, software, input size and measurement method, so another researcher can repeat it."}],
+  gate:"Your benchmark is repeatable, and model quality is measured separately from timing."}
+];
+const LANES=[["learn","Learn","course"],["read","Read","paper"],["cert","Certify","medal"],["prove","Prove","flask"]];
+const KIND_ICON={task:"task",course:"course",video:"video",code:"code",paper:"paper",book:"book",cert:"medal",evidence:"flask"};
+const STAGE_COPY={s1:"Weeks 1–8",s2:"After Python",s3:"After ML",s4:"After Py + ML",s5:"After ML + DEs",s6:"After baseline"};
+
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ic=(n,extra="")=>`<svg class="ic ${extra}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const CHECK=`<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+
+function itemHTML(it){
+  const title = it.u ? `<a href="${esc(it.u)}" target="_blank" rel="noopener">${esc(it.t)}${ic("ext","ext")}</a>` : `<span class="t">${esc(it.t)}</span>`;
+  const tags=(it.tags||[]).map(([c,l])=>`<span class="tag ${c}">${esc(l)}</span>`).join("") + (it.par?`<span class="tag">${esc(it.par)}</span>`:"");
+  return `<div class="item" id="it-${it.id}" data-state="todo">
+    <div class="ibody"><div class="ititle">${it.code?`<span class="code">${esc(it.code)}</span>`:ic(KIND_ICON[it.k]||"task")}${title}</div>
+    ${it.note?`<p class="inote">${esc(it.note)}</p>`:""}${tags?`<div class="tags">${tags}</div>`:""}
+    <div class="task-controls"><label class="control-label" for="state-${it.id}">Status</label>
+      <select class="task-status" id="state-${it.id}" data-id="${it.id}" aria-label="Status for ${esc(it.t)}">
+        <option value="todo">Not started</option><option value="doing">In progress</option><option value="done">Finished</option>
+      </select></div>
+    <details class="task-notes"><summary><span>My work notes</span><span class="note-state" data-note-label="${it.id}">Add a note</span></summary>
+      <textarea data-note-id="${it.id}" maxlength="2000" aria-label="Personal progress note for ${esc(it.t)}" placeholder="What did you do? What is your next step? Any blocker?"></textarea>
+    </details></div></div>`;
+}
+function render(){
+  let h="";
+  S.forEach((s,i)=>{
+    if(i===1){
+      h+=`<div class="decision">
+        <div class="dia-wrap" role="img" aria-label="Decision"><p>Can you already write a small Python script and read a CSV?</p></div>
+        <svg class="branch-svg" viewBox="0 0 600 34" preserveAspectRatio="none" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M300 0V14H150V34M300 14H450V34"/></svg>
+        <div class="branches">
+          <div class="bnode"><span class="blabel">NO</span><b>Do Stage 1 in full</b><small>Start CS50 Python and work through every problem set.</small></div>
+          <div class="bnode"><span class="blabel">YES</span><b>Review only the gaps</b><small>Skim Stage 1 for what you're missing, pass its gate, then move to Stage 2.</small></div>
+        </div>
+        <svg class="branch-svg" viewBox="0 0 600 34" preserveAspectRatio="none" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M150 0V18H450V0M300 18V34"/></svg>
+      </div><div class="arrow short"></div>`;
+    }
+    h+=`<section class="stage" id="${s.id}" aria-labelledby="${s.id}-h">
+      <div class="snode"><div class="sicon">${ic(s.icon)}</div>
+        <div class="stitle"><span class="mono">Stage ${s.n} · ${esc(s.timing)}</span><h2 id="${s.id}-h">${esc(s.title)}</h2><p>${esc(s.focus)}</p></div>
+        <div class="ring" id="ring-${s.id}" aria-label="Stage progress"><span>0%</span></div></div>
+      <div class="arrow"></div>
+      <div class="forkbar" aria-hidden="true"></div>
+      <div class="lanes">${LANES.map(([k,label,icn])=>{
+        const items=s[k]||[];
+        return `<div class="lane l-${k}"><div class="lane-h">${ic(icn)}${label}<em>${items.length?items.length:""}</em></div>
+          ${items.length?items.map(itemHTML).join(""):`<div class="empty">${esc(s[k+"Empty"]||"—")}</div>`}</div>`;}).join("")}</div>
+      <div class="forkbar" aria-hidden="true"></div>
+      ${s.warn?`<div class="warnbox">${ic("warn")}<span>${esc(s.warn)}</span></div>`:""}
+      <div class="arrow"></div>
+      <div class="gate" id="it-g${s.n}"><div class="gdia">${ic("check")}</div>
+        <div class="gtext"><span class="mono">Gate ${s.n} · move forward when</span><p>${esc(s.gate)}</p>
+        <div class="gate-actions"><span class="gate-prompt">I can do this. On to ${s.n<6?"Stage "+(s.n+1):"the first study"}.</span><label class="control-label" for="state-g${s.n}">Gate</label><select class="task-status gate-status" id="state-g${s.n}" data-id="g${s.n}" aria-label="Stage ${s.n} gate status"><option value="todo">Not started</option><option value="doing">In progress</option><option value="done">Finished</option></select></div></div></div>
+      <div class="arrow"></div>
+    </section>`;
+  });
+  h+=`<div class="endnode"><span class="sym-end" role="img" aria-label="End"></span>
+    <div class="rq"><span class="mono">Your first study</span><p>Can a compact VLA policy complete one defined greenhouse manipulation task on one selected edge device, while a validated digital twin supplies useful environmental state and constraints?</p>
+    <small>You don't need to solve the climate model and the manipulation task fully in your first study.</small></div></div>`;
+  document.getElementById("stages").innerHTML=h;
+
+  // matrix
+  let m=`<thead><tr><th>Track</th>${S.map(s=>`<th>Stage ${s.n}<b>${esc(s.title.split(" &")[0].replace("Set the research boundaries","Boundaries").replace("Digital twins","Twins + PIML").replace("Machine-learning foundations","ML foundations").replace("Compression","Edge"))}</b></th>`).join("")}</tr></thead><tbody>`;
+  LANES.forEach(([k,label,icn])=>{
+    m+=`<tr class="l-${k}"><th><span>${ic(icn)}${label}</span></th>${S.map(s=>{
+      const it=s[k]||[]; return `<td>${it.length?`<div class="mcell">${it.map(x=>`<button class="mchip" data-go="${x.id}">${esc(x.s||x.t)}</button>`).join("")}</div>`:`<span class="mdash">—</span>`}</td>`;}).join("")}</tr>`;
+  });
+  m+=`<tr><th style="color:var(--ink)"><span>${ic("check")}Gate</span></th>${S.map(s=>`<td><button class="mchip" data-go="g${s.n}" style="--lc:var(--ink);--lc-bg:var(--card-2)">Gate ${s.n}</button></td>`).join("")}</tr></tbody>`;
+  document.getElementById("matrix").innerHTML=m;
+}
+
+/* ---------- progress state ---------- */
+const KEY="thesis-roadmap-private-v1";
+const LEGACY_KEY="thesis-roadmap-progress-v1";
+const TASKS=[];
+S.forEach(s=>{
+  LANES.forEach(([track,label])=>(s[track]||[]).forEach(it=>TASKS.push({id:it.id,title:it.t,stage:s.n,stageTitle:s.title,stageId:s.id,track,label})));
+  TASKS.push({id:"g"+s.n,title:"Stage "+s.n+" gate",stage:s.n,stageTitle:s.title,stageId:s.id,track:"gate",label:"Gate",gate:true});
+});
+const TASK_BY_ID=new Map(TASKS.map(task=>[task.id,task]));
+let items={};
+let dirty={};
+let saveTimer=null;
+let retryTimer=null;
+let saving=false;
+let retryDelay=2500;
+let authenticated=false;
+
+function safeEntry(value){
+  if(!value||typeof value!=="object") return null;
+  return {status:["todo","doing","done"].includes(value.status)?value.status:"todo",note:typeof value.note==="string"?value.note.slice(0,2000):"",updatedAt:typeof value.updatedAt==="string"?value.updatedAt:"1970-01-01T00:00:00.000Z"};
+}
+function readLocal(){
+  let local={};
+  try{ const parsed=JSON.parse(localStorage.getItem(KEY)||"{}"); if(parsed&&typeof parsed==="object") local=parsed.items||parsed; }catch(e){}
+  const migrated={};
+  try{
+    const legacy=JSON.parse(localStorage.getItem(LEGACY_KEY)||"{}");
+    Object.entries(legacy||{}).forEach(([id,value])=>{ if(value===true&&TASK_BY_ID.has(id)) migrated[id]={status:"done",note:"",updatedAt:"1970-01-01T00:00:00.000Z"} });
+  }catch(e){}
+  return {...migrated,...local};
+}
+function saveLocal(){ try{localStorage.setItem(KEY,JSON.stringify({items,updatedAt:new Date().toISOString()}))}catch(e){} }
+function setSync(message,failed=false){
+  const el=document.getElementById("sync"); if(el) el.textContent=message;
+  const retry=document.getElementById("retry-save"); if(retry) retry.hidden=!failed;
+}
+function setSignedIn(value){
+  authenticated=value;
+  document.getElementById("app").hidden=!value;
+  document.getElementById("login-screen").hidden=value;
+  if(value) document.getElementById("password").value="";
+}
+function allIds(){ return [...document.querySelectorAll(".task-status")].map(select=>select.dataset.id) }
+function allStepsDone(){ return allIds().filter(id=>(items[id]?.status||"todo")==="done").length }
+function statusValue(id){ return items[id]?.status||"todo" }
+function renderDashboard(){
+  const total=TASKS.length;
+  const finished=TASKS.filter(task=>statusValue(task.id)==="done").length;
+  const active=TASKS.filter(task=>statusValue(task.id)==="doing");
+  const next=TASKS.find(task=>statusValue(task.id)==="todo");
+  document.getElementById("stat-finished").textContent=finished;
+  document.getElementById("stat-active").textContent=active.length;
+  document.getElementById("stat-remaining").textContent=total-finished;
+  document.getElementById("focus-count").textContent=active.length;
+  document.getElementById("focus-list").innerHTML=active.length?active.map(task=>`<button class="focus-task" data-go="${task.id}"><span class="focus-dot"></span><span><b>${esc(task.title)}</b><small>Stage ${task.stage} · ${esc(task.stageTitle)} · ${esc(task.label)}</small></span>${ic("arrow")}</button>`).join(""):`<p class="focus-empty">No steps marked in progress yet. Set a task to <b>In progress</b> and it will show up here.</p>`;
+  document.getElementById("next-step").innerHTML=next?`<span class="next-kicker">SUGGESTED NEXT STEP · STAGE ${next.stage}</span><b>${esc(next.title)}</b><small>${esc(next.stageTitle)} · ${esc(next.label)}</small><button class="next-button" data-go="${next.id}">Open this step ${ic("arrow")}</button>`:`<span class="next-kicker">ROADMAP COMPLETE</span><b>Every roadmap step is finished.</b><small>You can still add notes, revisit papers, or update any status.</small>`;
+  document.getElementById("pc-done").textContent=finished;
+  document.getElementById("pc-total").textContent=total;
+  document.getElementById("pc-bar").style.width=(total?finished/total*100:0)+"%";
+}
+function apply(){
+  document.querySelectorAll(".task-status").forEach(select=>{
+    const status=statusValue(select.dataset.id); select.value=status;
+    const parent=select.closest(".item, .gate"); if(parent) parent.dataset.state=status;
+  });
+  document.querySelectorAll("textarea[data-note-id]").forEach(area=>{
+    const entry=items[area.dataset.noteId]; const note=entry?.note||"";
+    if(area.value!==note) area.value=note;
+    const label=document.querySelector(`[data-note-label="${area.dataset.noteId}"]`);
+    if(label) label.textContent=note.trim()?"Note added":"Add a note";
+  });
+  S.forEach(s=>{
+    const box=document.getElementById(s.id); const controls=[...box.querySelectorAll(".task-status")];
+    const p=Math.round(controls.filter(control=>statusValue(control.dataset.id)==="done").length/controls.length*100);
+    const ring=document.getElementById("ring-"+s.id); ring.style.setProperty("--p",p); ring.firstElementChild.textContent=p+"%";
+  });
+  document.querySelectorAll('.mchip[data-go]').forEach(button=>{
+    const status=statusValue(button.dataset.go); button.classList.toggle("done",status==="done"); button.classList.toggle("doing",status==="doing");
+  });
+  renderDashboard();
+}
+function touch(id, patch){
+  const previous=items[id]||{status:"todo",note:""};
+  items[id]={...previous,...patch,updatedAt:new Date().toISOString()};
+  dirty[id]={status:items[id].status,note:items[id].note};
+  saveLocal(); apply();
+  setSync("Saving to your account…");
+  clearTimeout(saveTimer); saveTimer=setTimeout(flushSaves,650);
+}
+function mergeCloud(remote){
+  const local=readLocal();
+  items={}; dirty={};
+  const ids=new Set([...Object.keys(remote||{}),...Object.keys(local||{})]);
+  ids.forEach(id=>{
+    if(!TASK_BY_ID.has(id)) return;
+    const cloud=safeEntry(remote?.[id]); const browser=safeEntry(local?.[id]);
+    if(browser&&(!cloud||browser.updatedAt>cloud.updatedAt)) {items[id]=browser;dirty[id]={status:browser.status,note:browser.note}}
+    else if(cloud) items[id]=cloud;
+  });
+  saveLocal(); apply();
+  if(Object.keys(dirty).length) { setSync("Syncing this browser's saved work…"); flushSaves(); }
+  else setSync("Saved to your Vercel database");
+}
+async function api(path, options={}){
+  const response=await fetch(path,{cache:"no-store",credentials:"same-origin",...options});
+  let data={}; try{data=await response.json()}catch(e){}
+  if(!response.ok) {const error=new Error(data.error||"Request failed."); error.status=response.status; throw error}
+  return data;
+}
+async function flushSaves(){
+  if(saving||!authenticated||!Object.keys(dirty).length) return;
+  clearTimeout(retryTimer); retryTimer=null; saving=true;
+  const batch=dirty; dirty={};
+  try{
+    const data=await api("/api/progress",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save",items:batch})});
+    const remote=data.items||{};
+    Object.entries(remote).forEach(([id,value])=>{
+      if(TASK_BY_ID.has(id)&&!dirty[id]) items[id]=safeEntry(value);
+    });
+    retryTimer=null; retryDelay=2500; saveLocal(); apply();
+    setSync(Object.keys(dirty).length?"Saved; syncing latest edits…":"Saved to your Vercel database");
+  }catch(error){
+    dirty={...batch,...dirty}; saveLocal();
+    if(error.status===401){setSignedIn(false);document.getElementById("login-message").textContent=error.message;setSync("Sign in to continue saving");}
+    else {setSync("Cloud save unavailable · retrying",true); retryTimer=setTimeout(flushSaves,retryDelay); retryDelay=Math.min(retryDelay*2,60000);}
+  }finally{
+    saving=false;
+    if(Object.keys(dirty).length&&!retryTimer) saveTimer=setTimeout(flushSaves,100);
+  }
+}
+async function syncFromCloud(){
+  if(!authenticated||Object.keys(dirty).length||saving) return;
+  try{
+    const data=await api("/api/progress");
+    Object.entries(data.items||{}).forEach(([id,value])=>{
+      if(!TASK_BY_ID.has(id)||dirty[id]) return;
+      const incoming=safeEntry(value), current=safeEntry(items[id]);
+      if(!current||incoming.updatedAt>current.updatedAt) items[id]=incoming;
+    });
+    saveLocal(); apply(); setSync("Saved to your Vercel database");
+  }catch(error){ if(error.status===401){setSignedIn(false);document.getElementById("login-message").textContent=error.message;} else setSync("Offline · browser backup available"); }
+}
+function goTo(id){
+  const target=document.getElementById("it-"+id);
+  if(target){ target.scrollIntoView({behavior:"smooth",block:"center"}); target.classList.remove("flash"); void target.offsetWidth; target.classList.add("flash"); }
+}
+function downloadBackup(){
+  const payload={app:"thesis-roadmap-progress",version:1,exportedAt:new Date().toISOString(),items};
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob); const link=document.createElement("a"); link.href=url; link.download="thesis-roadmap-backup.json"; link.click(); URL.revokeObjectURL(url);
+}
+async function importBackup(file){
+  const payload=JSON.parse(await file.text());
+  if(payload?.app!=="thesis-roadmap-progress"||payload.version!==1||!payload.items||typeof payload.items!=="object") throw new Error("This file is not a Thesis Roadmap backup.");
+  const timestamp=new Date().toISOString(); let count=0;
+  Object.entries(payload.items).forEach(([id,value])=>{
+    if(!TASK_BY_ID.has(id)||!value||!["todo","doing","done"].includes(value.status)||typeof value.note!=="string") return;
+    items[id]={status:value.status,note:value.note.slice(0,2000),updatedAt:timestamp}; dirty[id]={status:items[id].status,note:items[id].note}; count++;
+  });
+  if(!count) throw new Error("No valid roadmap progress was found in this backup.");
+  saveLocal(); apply(); setSync("Importing backup to your account…"); flushSaves();
+}
+
+render();
+setSignedIn(false);
+document.getElementById("login-screen").hidden=false;
+setSync("Connect to load your saved progress");
+document.getElementById("login-form").addEventListener("submit",async event=>{
+  event.preventDefault(); const message=document.getElementById("login-message");
+  const button=document.getElementById("login-submit"); button.disabled=true; button.textContent="Opening…"; message.textContent="";
+  try{
+    const data=await api("/api/progress",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"login",password:document.getElementById("password").value})});
+    setSignedIn(true); mergeCloud(data.items||{}); document.getElementById("app").scrollTop=0;
+  }catch(error){message.textContent=error.message;}
+  finally{button.disabled=false;button.textContent="Open my roadmap";}
+});
+document.getElementById("logout").addEventListener("click",async()=>{
+  try{await api("/api/progress",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout"})})}catch(e){}
+  setSignedIn(false);document.getElementById("login-message").textContent="You are signed out.";
+});
+document.getElementById("retry-save").addEventListener("click",()=>{clearTimeout(retryTimer);retryTimer=null;setSync("Retrying cloud save…");flushSaves();});
+document.getElementById("export-backup").addEventListener("click",downloadBackup);
+document.getElementById("import-backup").addEventListener("click",()=>document.getElementById("backup-file").click());
+document.getElementById("backup-file").addEventListener("change",async event=>{
+  const file=event.target.files?.[0]; if(!file) return;
+  try{await importBackup(file);document.getElementById("backup-message").textContent="Backup imported. Saving to your account.";}
+  catch(error){document.getElementById("backup-message").textContent=error.message;}
+  finally{event.target.value="";}
+});
+document.addEventListener("change",event=>{
+  const select=event.target.closest(".task-status");
+  if(select){touch(select.dataset.id,{status:select.value});return;}
+});
+document.addEventListener("input",event=>{
+  const area=event.target.closest("textarea[data-note-id]");
+  if(area) touch(area.dataset.noteId,{note:area.value.slice(0,2000)});
+});
+document.addEventListener("click",event=>{
+  const jump=event.target.closest("[data-go]");
+  if(jump){goTo(jump.dataset.go);return;}
+  const chip=event.target.closest(".chip[data-f]");
+  if(chip){
+    document.querySelectorAll(".chip[data-f]").forEach(button=>button.setAttribute("aria-pressed",button===chip?"true":"false"));
+    if(chip.dataset.f==="all") delete document.body.dataset.focus; else document.body.dataset.focus=chip.dataset.f;
+    try{localStorage.setItem(KEY+"-focus",chip.dataset.f)}catch(e){}
+  }
+});
+try{const focus=localStorage.getItem(KEY+"-focus");if(focus&&focus!=="all")document.querySelector(`.chip[data-f="${focus}"]`)?.click()}catch(e){}
+(async()=>{
+  try{
+    const data=await api("/api/progress"); setSignedIn(true); mergeCloud(data.items||{});
+  }catch(error){
+    setSignedIn(false);
+    document.getElementById("login-message").textContent=error.status===401?"Enter your private password to open your roadmap.":error.message;
+  }
+})();
+setInterval(syncFromCloud,30000);</script>
+
+</body></html>
