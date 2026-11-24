@@ -23,7 +23,7 @@ function itemHTML(it){
     <div class="task-controls"><label class="control-label" for="state-${it.id}">Status</label>
       <select class="task-status" id="state-${it.id}" data-id="${it.id}" aria-label="Status for ${esc(it.t)}">
         <option value="todo">Not started</option><option value="doing">In progress</option><option value="done">Finished</option>
-      </select></div>
+      </select><button type="button" class="quiet-button original-archive" data-ws="archive" data-record="${it.id}" disabled>Archive</button></div>
     <details class="task-notes"><summary><span>My work notes</span><span class="note-state" data-note-label="${it.id}">Add a note</span></summary>
       <textarea data-note-id="${it.id}" maxlength="2000" aria-label="Personal progress note for ${esc(it.t)}" placeholder="What did you do? What is your next step? Any blocker?"></textarea>
     </details></div></div>`;
@@ -79,15 +79,17 @@ function setSignedIn(value){
   document.getElementById("app").hidden=!value;
   document.getElementById("login-screen").hidden=value;
   if(value) document.getElementById("password").value="";
+  document.dispatchEvent(new Event("roadmap-session"));
 }
 function allIds(){ return [...document.querySelectorAll(".task-status")].map(select=>select.dataset.id) }
 function allStepsDone(){ return allIds().filter(id=>(items[id]?.status||"todo")==="done").length }
-function statusValue(id){ return items[id]?.status||"todo" }
+function statusValue(id){ return items[id]?.status||(id==="s0a"?"done":"todo") }
 function renderDashboard(){
-  const total=TASKS.length;
-  const finished=TASKS.filter(task=>statusValue(task.id)==="done").length;
-  const active=TASKS.filter(task=>statusValue(task.id)==="doing");
-  const next=TASKS.find(task=>statusValue(task.id)==="todo");
+  const visible=TASKS.filter(task=>!document.getElementById("it-"+task.id)?.classList.contains("roadmap-archived"));
+  const total=visible.length;
+  const finished=visible.filter(task=>statusValue(task.id)==="done").length;
+  const active=visible.filter(task=>statusValue(task.id)==="doing");
+  const next=visible.find(task=>statusValue(task.id)==="todo");
   document.getElementById("stat-finished").textContent=finished;
   document.getElementById("stat-active").textContent=active.length;
   document.getElementById("stat-remaining").textContent=total-finished;
@@ -110,7 +112,7 @@ function apply(){
     if(label) label.textContent=note.trim()?"Note added":"Add a note";
   });
   S.forEach(s=>{
-    const box=document.getElementById(s.id); const controls=[...box.querySelectorAll(".task-status")];
+    const box=document.getElementById(s.id); const controls=[...box.querySelectorAll(".task-status")].filter(control=>!control.closest(".roadmap-archived"));
     const p=Math.round(controls.filter(control=>statusValue(control.dataset.id)==="done").length/controls.length*100);
     const ring=document.getElementById("ring-"+s.id); ring.style.setProperty("--p",p); ring.firstElementChild.textContent=p+"%";
   });
@@ -120,7 +122,7 @@ function apply(){
   renderDashboard();
 }
 function touch(id, patch){
-  const previous=items[id]||{status:"todo",note:""};
+  const previous=items[id]||{status:statusValue(id),note:""};
   items[id]={...previous,...patch,updatedAt:new Date().toISOString()};
   dirty[id]={status:items[id].status,note:items[id].note};
   saveLocal(); apply();
@@ -390,10 +392,13 @@ $dashboard = @'
   </section>
 '@
 $html = $html.Replace('  <main class="diagram" id="diagram">', "$dashboard`n  <main class=`"diagram`" id=`"diagram`">")
+$workspace = Get-Content -Raw -Encoding UTF8 (Join-Path $ProjectRoot 'source/workspace.html')
+$html = $html.Replace('  <main class="diagram" id="diagram">', "$workspace`n  <main class=`"diagram`" id=`"diagram`">")
+$html = $html.Replace('</head>', '<link rel="stylesheet" href="/workspace.css"></head>')
+$html = $html.Replace('</body>', '<script src="/workspace.js"></script></body>')
 
 Set-Content -Path $OutputPath -Value $html -Encoding UTF8
 
-$sourceScript = $html.Substring($html.IndexOf('<script>') + 8, $html.LastIndexOf('</script>') - ($html.IndexOf('<script>') + 8))
-if (-not $sourceScript.Contains('const S = [')) { throw 'Roadmap data was not preserved in the generated page.' }
+if (-not $script.Contains('const S = [')) { throw 'Roadmap data was not preserved in the generated page.' }
 if (-not $html.Contains('id="login-form"') -or -not $html.Contains('id="dashboard"')) { throw 'The tracker UI was not added correctly.' }
 Write-Output "Generated $OutputPath"

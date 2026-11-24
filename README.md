@@ -29,6 +29,12 @@ Vercel's [Hobby plan](https://vercel.com/docs/plans/hobby) is free for personal 
 
 ## Progress and backups
 
+- **Four week plan** turns the supervisor meeting into a greenhouse VLA reading and article plan. Add or edit tasks, use Backlog for unscheduled ideas, and mark work in progress or finished. The progress overview above the plan reflects the original roadmap, and each week shows its own task totals.
+- **Research journal** starts with the supervisor meeting summary. Use the Paper note, Experiment log, and Weekly review templates. Click **Save** on each new or edited entry.
+- **Archive and restore** removes tasks from the active view. It keeps an original roadmap task's notes and status available when you restore it. The journal also supports archiving.
+- **Export research records** downloads the tasks, journal, and archive as JSON for reference. The original roadmap's backup and import buttons still cover its per-task progress.
+- The research workspace uses the same Neon connection and sign-in. It creates its own table automatically, so previous progress stays in the original table.
+
 - Every task and stage gate has **Not started**, **In progress**, and **Finished** states.
 - Use each task's **My work notes** area to record what you did, your next step, or a blocker.
 - Changes save to Postgres automatically. The status indicator shows when cloud saving is pending or unavailable.

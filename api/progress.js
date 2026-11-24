@@ -1,5 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { cleanRecord, readWorkspace, saveWorkspaceRecord } from "../lib/workspace.js";
 
 const COOKIE_NAME = "thesis_roadmap_session";
 const SESSION_SECONDS = 60 * 60 * 24 * 30;
@@ -111,6 +112,9 @@ export async function GET(request) {
   if (!isAuthenticated(request)) return fail(401, "Please sign in again.");
   try {
     const sql = database();
+    if (new URL(request.url).searchParams.get("view") === "workspace") {
+      return json({ records: await readWorkspace(sql) });
+    }
     await ensureTable(sql);
     return json(await readProgress(sql));
   } catch (error) {
@@ -146,6 +150,20 @@ export async function POST(request) {
 
   if (body.action === "logout") {
     return json({ ok: true }, 200, { "Set-Cookie": sessionCookie("", 0, request) });
+  }
+
+  if (body.action === "saveWorkspace") {
+    if (!isAuthenticated(request)) return fail(401, "Your session expired. Please sign in again.");
+    let change;
+    try { change = cleanRecord(body.record, VALID_IDS); }
+    catch (error) { return fail(400, error.message); }
+    try {
+      const record = await saveWorkspaceRecord(database(), change.record, change.revision);
+      return record ? json({ record }) : fail(409, "This item changed in another tab. Your draft is still open.");
+    } catch (error) {
+      console.error("Workspace save failed:", error);
+      return fail(503, "Could not save to the database. Keep this tab open and try again.");
+    }
   }
 
   if (body.action === "save") {

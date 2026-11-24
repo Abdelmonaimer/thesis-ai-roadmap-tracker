@@ -1,0 +1,72 @@
+<section class="dashboard research" id="research-workspace" aria-labelledby="research-title">
+  <div class="dashboard-top">
+    <div><span class="mono dashboard-eyebrow">PHD WORKSPACE</span><h2 id="research-title">Greenhouse VLA · First month</h2>
+    <p>Work toward an article outline and a focused experiment plan for your next supervisor review.</p></div>
+  </div>
+  <nav class="research-actions" aria-label="Research workspace">
+    <a href="#research-tasks">Four week plan</a><a href="#research-journal">Research journal</a>
+    <a href="#research-resources">Reading and videos</a><a href="#diagram">Original roadmap</a>
+  </nav>
+  <details class="research-box">
+    <summary>Research question and article outline</summary>
+    <p><strong>Working question.</strong> For one supervised tomato plant inspection, how do a simple vision baseline and a VLA policy compare on task success, latency, memory and energy on an available Jetson?</p>
+    <p><strong>Scope to confirm.</strong> One crop, one action, one camera setup and one device. Start with replay or simulation if hardware or robot demonstrations are unavailable. A policy that only labels images is perception; a VLA comparison needs an actual action, such as choosing an inspection viewpoint or moving a camera to it.</p>
+    <p><strong>Article skeleton.</strong> Working title → problem and greenhouse scope → related work → gap to verify → research question → proposed methods → planned evaluation → limitations → references.</p>
+    <p><strong>Evaluation.</strong> Use the same held-out trials for both methods. Log success criterion, hardware and power mode, warmup, median and p95 latency, peak memory, and joules per trial if measurable. Label which power rails you sampled. Separate real measurements from planned measurements.</p>
+  </details>
+  <p id="research-status" role="status">Loading your research workspace…</p>
+  <p id="research-action-status" role="status"></p>
+  <div class="research-actions">
+    <button type="button" data-ws="reload" class="quiet-button">Refresh workspace</button>
+    <button type="button" data-ws="download" class="quiet-button" disabled>Export research records</button>
+  </div>
+  <details class="research-box" id="research-editor" hidden>
+    <summary id="research-editor-title">Edit item</summary>
+    <form id="research-form">
+      <label>Title<input name="title" required maxlength="160"></label>
+      <div id="research-task-fields">
+        <label>Week<select name="week"><option value="0">Backlog</option><option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option><option value="4">Week 4</option></select></label>
+        <label>Status<select name="status"><option value="todo">Not started</option><option value="doing">In progress</option><option value="done">Finished</option></select></label>
+      </div>
+      <label id="research-date" hidden>Date<input type="date" name="date"></label>
+      <label><span id="research-detail-title">Details</span><textarea name="detail" rows="7" maxlength="8000"></textarea></label>
+      <label id="research-next" hidden>Next step<textarea name="next" rows="2" maxlength="1000"></textarea></label>
+      <p id="research-draft-status" role="status"></p>
+      <div class="research-actions">
+        <button type="submit" class="primary-button">Save</button>
+        <button type="button" data-ws="cancel" class="quiet-button">Cancel</button>
+        <button type="button" data-ws="rebase" class="quiet-button" hidden>Use my draft over latest version</button>
+      </div>
+    </form>
+  </details>
+  <section id="research-tasks" class="research-section"><h3>Four week plan</h3>
+    <p>Add tasks, set their week and status, or move a task to the archive. Use Backlog for ideas you haven’t scheduled.</p>
+    <button type="button" data-ws="task" class="quiet-button" disabled>Add task</button>
+    <div id="research-task-list"></div>
+  </section>
+  <section id="research-journal" class="research-section"><h3>Research journal</h3>
+    <p>Log what you did, the evidence or result, any blocker, and the next step. Use <strong>Paper note</strong> for a reading matrix entry and <strong>Experiment log</strong> for a run.</p>
+    <div class="research-actions">
+      <button type="button" data-ws="journal" class="quiet-button" disabled>Add entry</button>
+      <button type="button" data-ws="paper" class="quiet-button" disabled>Paper note</button>
+      <button type="button" data-ws="experiment" class="quiet-button" disabled>Experiment log</button>
+      <button type="button" data-ws="review" class="quiet-button" disabled>Weekly review</button>
+    </div>
+    <div id="research-journal-list"></div>
+  </section>
+  <details id="research-resources" class="research-box">
+    <summary>Reading and videos</summary>
+    <ul>
+      <li><a href="https://www.youtube.com/watch?v=zjkBMFhNj_g" target="_blank" rel="noopener">Karpathy’s LLM intro (YouTube)</a> · Watch the first 12 minutes for inference, training and tokens.</li>
+      <li><a href="https://robotics-transformer.github.io/" target="_blank" rel="noopener">RT-2 demos and paper</a> · See how an image and instruction produce robot actions.</li>
+      <li><a href="https://arxiv.org/abs/2406.09246" target="_blank" rel="noopener">OpenVLA</a> · Look for robot action labels and the adaptation requirements.</li>
+      <li><a href="https://huggingface.co/docs/lerobot/smolvla" target="_blank" rel="noopener">SmolVLA / LeRobot</a> · Inspect the supported observation and action formats and follow the paper link.</li>
+      <li><a href="https://www.sciencedirect.com/science/article/pii/S277237552600523X" target="_blank" rel="noopener">AGRI-BT</a> · Compare this greenhouse VLM plus behavior tree approach with a VLA policy.</li>
+      <li><a href="https://www.kaggle.com/docs/notebooks" target="_blank" rel="noopener">Kaggle Notebooks</a> · Try a small pretrained inference example.</li>
+      <li><a href="https://developer.nvidia.com/embedded/jetpack" target="_blank" rel="noopener">NVIDIA JetPack</a> · Map CUDA (GPU programming), cuDNN (deep learning primitives), and TensorRT (inference optimization).</li>
+      <li><a href="https://www.youtube.com/watch?v=czteUSONG-c" target="_blank" rel="noopener">Run GenAI on Jetson (YouTube)</a> · See an example of on-device inference.</li>
+      <li><a href="https://docs.nvidia.com/jetson/archives/r36.2/DeveloperGuide/AT/JetsonLinuxDevelopmentTools/TegrastatsUtility.html" target="_blank" rel="noopener">Jetson tegrastats</a> · Check the metrics supported by your device and JetPack release.</li>
+    </ul>
+  </details>
+  <details class="research-box" id="research-archive"><summary>Archive and restore</summary><div id="research-archive-list"></div></details>
+</section>
